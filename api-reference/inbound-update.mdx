@@ -60,6 +60,7 @@ The `dispatch_rule_id` in the response may be different from the one you sent. *
 
 ```bash
 curl -X PUT http://localhost:8000/inbound/update \
+  -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
     "sip_trunk_id": "ST_xxxxxxxxxxxx",

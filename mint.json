@@ -47,6 +47,7 @@
             "group": "Getting Started",
             "pages": [
                 "introduction",
+                "authentication",
                 "quickstart",
                 "installation",
                 "configuration"

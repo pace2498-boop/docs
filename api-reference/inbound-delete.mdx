@@ -42,6 +42,7 @@ DELETE /inbound/{sip_trunk_id}/{dispatch_rule_id}
 
 ```bash
 curl -X DELETE \
+  -H "X-API-Key: your-api-key" \
   "http://localhost:8000/inbound/ST_xxxxxxxxxxxx/DR_yyyyyyyyyyyy"
 ```
 

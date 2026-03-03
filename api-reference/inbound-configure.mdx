@@ -66,6 +66,7 @@ HTTP/1.1 201 Created
 
 ```bash
 curl -X POST http://localhost:8000/inbound/configure \
+  -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
     "phone_number": "+918035450231",
@@ -77,6 +78,7 @@ curl -X POST http://localhost:8000/inbound/configure \
 
 ```bash
 curl -X POST http://localhost:8000/inbound/configure \
+  -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
     "phone_number": "+918035450231",
@@ -112,6 +114,7 @@ curl -X POST http://localhost:8000/inbound/configure \
 
 ```bash
 curl -X POST http://localhost:8000/inbound/configure \
+  -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
     "phone_number": "+918035450232",
