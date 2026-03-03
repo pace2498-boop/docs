@@ -1,0 +1,126 @@
+---
+title: LLM Providers
+description: Supported Language Model (LLM) providers and their configuration options.
+---
+
+# LLM Providers
+
+The standard pipeline uses an LLM to generate the agent's conversational responses. Set `llm_config.provider` to any of the values below.
+
+---
+
+## Default (OpenAI gpt-4o-mini)
+
+When no `llm_config` is provided, OpenAI `gpt-4o-mini` is used. A 30-second timeout is applied automatically.
+
+---
+
+## Supported Providers
+
+### OpenAI
+
+| Field | Value |
+|---|---|
+| `provider` | `"openai"` |
+| Required Key | `OPENAI_API_KEY` |
+
+```json
+{
+  "llm_config": {
+    "provider": "openai",
+    "config": {
+      "model": "gpt-4o",
+      "temperature": 0.7
+    }
+  }
+}
+```
+
+**Common models**: `gpt-4o`, `gpt-4o-mini`, `gpt-4-turbo`, `gpt-3.5-turbo`
+
+<Note>
+A 30-second HTTP timeout is automatically applied to all OpenAI LLM requests to prevent agent hangs on slow responses.
+</Note>
+
+---
+
+### Anthropic
+
+| Field | Value |
+|---|---|
+| `provider` | `"anthropic"` |
+| Required Key | `ANTHROPIC_API_KEY` |
+| Note | Must install `livekit-plugins-anthropic` |
+
+```json
+{
+  "llm_config": {
+    "provider": "anthropic",
+    "config": {
+      "model": "claude-3-5-sonnet-20241022"
+    }
+  }
+}
+```
+
+**Common models**: `claude-3-5-sonnet-20241022`, `claude-3-5-haiku-20241022`, `claude-3-opus-20240229`
+
+---
+
+### Google / Gemini
+
+| Field | Value |
+|---|---|
+| `provider` | `"google"` or `"gemini"` |
+| Required Key | `GOOGLE_API_KEY` |
+
+```json
+{
+  "llm_config": {
+    "provider": "google",
+    "config": {
+      "model": "gemini-2.0-flash-exp"
+    }
+  }
+}
+```
+
+**Common models**: `gemini-2.0-flash-exp`, `gemini-1.5-pro`, `gemini-1.5-flash`
+
+---
+
+### Groq
+
+| Field | Value |
+|---|---|
+| `provider` | `"groq"` |
+| Required Key | `GROQ_API_KEY` |
+| Note | Must install `livekit-plugins-groq` |
+
+```json
+{
+  "llm_config": {
+    "provider": "groq",
+    "config": {
+      "model": "llama-3.3-70b-versatile"
+    }
+  }
+}
+```
+
+**Common models**: `llama-3.3-70b-versatile`, `llama-3.1-8b-instant`, `mixtral-8x7b-32768`
+
+---
+
+## Provider Comparison
+
+| Provider | Best Models | Cost | Speed | Tool Calling |
+|---|---|---|---|---|
+| OpenAI | GPT-4o, GPT-4o-mini | Medium | Fast | ✅ Excellent |
+| Anthropic | Claude 3.5 Sonnet | Higher | Medium | ✅ Excellent |
+| Google | Gemini 2.0 Flash | Low | Very Fast | ✅ Good |
+| Groq | Llama 3.3 70B | Very Low | Fastest | ✅ Good |
+
+<Tip>
+For tool-heavy agents (many external API calls), OpenAI or Anthropic tend to follow tool schemas most reliably. Groq is best for speed-sensitive, simpler conversation flows.
+</Tip>

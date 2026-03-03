@@ -1,0 +1,124 @@
+---
+title: Realtime Model Providers
+description: Supported Realtime model providers for ultra-low latency speech-to-speech AI.
+---
+
+# Realtime Model Providers
+
+Realtime models combine STT, LLM, and TTS into a single model that processes audio natively — eliminating the handoff latency of the standard pipeline.
+
+Use `model_type: "realtime"` and set `realtime_config` in your request.
+
+---
+
+## Supported Providers
+
+### Ultravox
+
+[Ultravox](https://www.ultravox.ai/) by Fixie.ai is a speech-native language model that accepts and produces audio directly.
+
+| Field | Value |
+|---|---|
+| `provider` | `"ultravox"` |
+| Required Key | `ULTRAVOX_API_KEY` |
+
+```json
+{
+  "model_type": "realtime",
+  "realtime_config": {
+    "provider": "ultravox",
+    "config": {
+      "model": "fixie-ai/ultravox",
+      "system_prompt": "You are a helpful AI assistant."
+    }
+  }
+}
+```
+
+**Common config keys**: `model`, `system_prompt`, `voice`, `language`
+
+<Note>
+Ultravox uses a Llama 3-based chat template. Tools (function calling) must be used **after** the first user message — the agent cannot invoke tools before the user has spoken. Plan your system prompt accordingly.
+</Note>
+
+---
+
+### OpenAI Realtime
+
+OpenAI's Realtime API (`gpt-4o-realtime-preview`) allows native audio input/output with full function calling support.
+
+| Field | Value |
+|---|---|
+| `provider` | `"openai_realtime"` or `"openai-realtime"` |
+| Required Key | `OPENAI_API_KEY` |
+
+```json
+{
+  "model_type": "realtime",
+  "realtime_config": {
+    "provider": "openai_realtime",
+    "config": {
+      "model": "gpt-4o-realtime-preview",
+      "voice": "alloy",
+      "system_prompt": "You are a helpful AI voice assistant."
+    }
+  }
+}
+```
+
+**Voices**: `alloy`, `echo`, `shimmer`
+
+**Available models**: `gpt-4o-realtime-preview`, `gpt-4o-mini-realtime-preview`
+
+---
+
+### Gemini Live
+
+Google's Gemini Live API enables real-time multimodal conversation with native audio.
+
+| Field | Value |
+|---|---|
+| `provider` | `"gemini_live"` or `"gemini-live"` |
+| Required Key | `GOOGLE_API_KEY` |
+
+```json
+{
+  "model_type": "realtime",
+  "realtime_config": {
+    "provider": "gemini_live",
+    "config": {
+      "model": "gemini-2.0-flash-exp",
+      "instructions": "You are a helpful AI assistant.",
+      "voice": { "name": "Puck" }
+    }
+  }
+}
+```
+
+<Note>
+For Gemini Live, the system prompt key is **`instructions`** (not `system_prompt`). This is handled automatically by the agent — if you provide `system_prompt` in the metadata, it is mapped to `instructions` for Gemini Live.
+</Note>
+
+**Available voices**: `Puck`, `Charon`, `Kore`, `Fenrir`, `Aoede`
+
+---
+
+## Configuration Comparison
+
+| Provider | Latency | Tool Calling | Languages | Best For |
+|---|---|---|---|---|
+| Ultravox | ~150ms | ⚠️ Limited (post first message) | En primary | Speed, Llama-based stacks |
+| OpenAI Realtime | ~200ms | ✅ Full | En primary | Full tool calling, OpenAI stack |
+| Gemini Live | ~200ms | ✅ Good | Multi-language | Google ecosystem, multilingual |
+
+---
+
+## Common Pitfalls
+
+<Warning>
+**Realtime + Tools**: Not all realtime providers support function calling equally. OpenAI Realtime has the most robust function calling support. Ultravox requires the user to speak first. Test your tool-heavy agents thoroughly before deploying.
+</Warning>
+
+<Warning>
+**Standard configs are ignored**: When `model_type` is `"realtime"`, any `stt_config`, `llm_config`, or `tts_config` values are ignored. Only `realtime_config` is used.
+</Warning>

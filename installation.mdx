@@ -1,0 +1,134 @@
+---
+title: Installation
+description: Full installation guide for the LiveKit Voice Agent — dependencies, virtual environments, and provider setup.
+---
+
+# Installation
+
+## System Requirements
+
+| Requirement | Version |
+|---|---|
+| Python | 3.11 or higher |
+| pip / uv | Latest |
+| Node.js | 18+ (for Mintlify docs only) |
+| OS | Windows, macOS, Linux |
+
+---
+
+## 1. Python Environment
+
+We recommend using a virtual environment to isolate dependencies.
+
+<CodeGroup>
+
+```bash venv (builtin)
+python -m venv .venv
+
+# Windows
+.venv\Scripts\activate
+
+# macOS / Linux
+source .venv/bin/activate
+```
+
+```bash uv (fast)
+pip install uv
+uv venv .venv
+source .venv/bin/activate   # or .venv\Scripts\activate on Windows
+```
+
+</CodeGroup>
+
+---
+
+## 2. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+Key packages installed:
+
+| Package | Purpose |
+|---|---|
+| `livekit-agents` | Core agent framework |
+| `livekit-plugins-openai` | OpenAI STT / LLM / TTS |
+| `livekit-plugins-cartesia` | Cartesia TTS |
+| `livekit-plugins-assemblyai` | AssemblyAI STT |
+| `livekit-plugins-deepgram` | Deepgram STT / TTS |
+| `livekit-plugins-elevenlabs` | ElevenLabs TTS |
+| `livekit-plugins-google` | Google STT / LLM / TTS / Realtime |
+| `livekit-plugins-silero` | Silero VAD |
+| `livekit-plugins-ultravox` | Ultravox Realtime |
+| `fastapi` | REST API framework |
+| `uvicorn` | ASGI server |
+| `pydantic` | Data validation |
+| `aiohttp` | Async HTTP (tool execution) |
+| `python-dotenv` | `.env` file loader |
+
+---
+
+## 3. Provider API Keys
+
+You need at least one provider per component. Set these as environment variables (see [Configuration](/configuration)).
+
+### STT (Speech-to-Text)
+| Provider | Env Variable |
+|---|---|
+| AssemblyAI *(default)* | `ASSEMBLYAI_API_KEY` |
+| Deepgram | `DEEPGRAM_API_KEY` |
+| OpenAI Whisper | `OPENAI_API_KEY` |
+| ElevenLabs | `ELEVENLABS_API_KEY` |
+| Cartesia | `CARTESIA_API_KEY` |
+| Google | `GOOGLE_APPLICATION_CREDENTIALS` |
+
+### LLM (Language Model)
+| Provider | Env Variable |
+|---|---|
+| OpenAI *(default)* | `OPENAI_API_KEY` |
+| Anthropic | `ANTHROPIC_API_KEY` |
+| Google Gemini | `GOOGLE_API_KEY` |
+| Groq | `GROQ_API_KEY` |
+
+### TTS (Text-to-Speech)
+| Provider | Env Variable |
+|---|---|
+| Cartesia *(default)* | `CARTESIA_API_KEY` |
+| ElevenLabs | `ELEVENLABS_API_KEY` |
+| OpenAI | `OPENAI_API_KEY` |
+| Deepgram | `DEEPGRAM_API_KEY` |
+| Google | `GOOGLE_APPLICATION_CREDENTIALS` |
+
+### Realtime Models
+| Provider | Env Variable |
+|---|---|
+| Ultravox | `ULTRAVOX_API_KEY` |
+| OpenAI Realtime | `OPENAI_API_KEY` |
+| Gemini Live | `GOOGLE_API_KEY` |
+
+---
+
+## 4. LiveKit Setup
+
+1. Create a free [LiveKit Cloud](https://cloud.livekit.io) account (or self-host).
+2. Create a project and note your **API Key**, **API Secret**, and **WebSocket URL**.
+3. Configure a **SIP Trunk** (Twilio, Plivo, Telnyx, or similar) in the LiveKit dashboard. Note the `sip_trunk_id`.
+
+---
+
+## 5. Running the Services
+
+The platform has two independent processes — both must be running for calls to work:
+
+```bash
+# Terminal 1: FastAPI REST API
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Terminal 2: LiveKit Agent Worker
+python -m agent.main start
+```
+
+<Tip>
+In production, run both services with process managers (e.g., `supervisord`, Docker Compose, or systemd). See the included `.gitlab-ci.yml` for a CI/CD pipeline example.
+</Tip>

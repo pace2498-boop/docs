@@ -1,0 +1,128 @@
+---
+title: Configuration
+description: Complete reference for environment variables and application settings.
+---
+
+# Configuration
+
+All configuration is managed through environment variables, loaded from a `.env` file in the project root.
+
+## Creating the `.env` File
+
+```bash
+# Copy the template (if available) or create manually
+touch .env
+```
+
+---
+
+## Required Variables
+
+These must be set for the application to start.
+
+| Variable | Description | Example |
+|---|---|---|
+| `LIVEKIT_URL` | LiveKit WebSocket URL | `wss://yourproject.livekit.cloud` |
+| `LIVEKIT_API_KEY` | LiveKit project API key | `APIxxxxxxxxxxxx` |
+| `LIVEKIT_API_SECRET` | LiveKit project API secret | `your_secret_here` |
+| `AGENT_NAME` | Name of the agent worker (must match in both services) | `my_voice_agent` |
+| `LIVEKIT_SIP_TRUNK_ID` | Default SIP trunk ID for outbound calls | `ST_xxxxxxxxxxxx` |
+| `DATABASE_URL` | PostgreSQL connection string (required for inbound call configs) | `postgresql://user:pass@host:5432/db` |
+
+<Warning>
+`AGENT_NAME` must be **identical** in both the FastAPI service and the Agent Worker process. If they differ, dispatched calls will be silently lost.
+</Warning>
+
+---
+
+## AI Provider Keys
+
+Set keys for the providers you intend to use. You don't need all of them — only the ones you configure.
+
+```bash
+# OpenAI (LLM + STT + TTS)
+OPENAI_API_KEY=sk-...
+
+# Anthropic (LLM)
+ANTHROPIC_API_KEY=sk-ant-...
+
+# Google (LLM + STT + TTS + Realtime)
+GOOGLE_API_KEY=AIza...
+
+# Groq (LLM + STT)
+GROQ_API_KEY=gsk_...
+
+# AssemblyAI (STT — default)
+ASSEMBLYAI_API_KEY=...
+
+# Deepgram (STT + TTS)
+DEEPGRAM_API_KEY=...
+
+# Cartesia (TTS — default)
+CARTESIA_API_KEY=...
+
+# ElevenLabs (STT + TTS)
+ELEVENLABS_API_KEY=...
+
+# Ultravox (Realtime)
+ULTRAVOX_API_KEY=...
+```
+
+---
+
+## Optional Variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `API_HOST` | `0.0.0.0` | Host the FastAPI server binds to |
+| `API_PORT` | `8000` | Port the FastAPI server listens on |
+
+---
+
+## Full `.env` Example
+
+```bash
+# ── LiveKit ──────────────────────────────────────────────────────────────────
+LIVEKIT_URL=wss://yourproject.livekit.cloud
+LIVEKIT_API_KEY=APIxxxxxxxxxxxx
+LIVEKIT_API_SECRET=your_api_secret_here
+LIVEKIT_SIP_TRUNK_ID=ST_xxxxxxxxxxxx
+
+# ── Agent ────────────────────────────────────────────────────────────────────
+AGENT_NAME=my_voice_agent
+
+# ── Database ─────────────────────────────────────────────────────────────────
+DATABASE_URL=postgresql://postgres:password@localhost:5432/livekit
+
+# ── AI Providers ─────────────────────────────────────────────────────────────
+OPENAI_API_KEY=sk-...
+ASSEMBLYAI_API_KEY=...
+CARTESIA_API_KEY=...
+```
+
+---
+
+## Default Model Configuration
+
+When no model config is specified in an API request, these defaults are used:
+
+| Component | Default Provider | Default Model |
+|---|---|---|
+| STT | AssemblyAI | `universal-streaming-multilingual` |
+| LLM | OpenAI | `gpt-4o-mini` |
+| TTS | Cartesia | `sonic-3` |
+| Voice | Cartesia | `95d51f79-c397-46f9-b49a-23763d3eaa2d` |
+| Language | — | `en` |
+
+---
+
+## Where Settings Are Used
+
+Settings are loaded at startup via `app/core/config.py` using Pydantic Settings. Both the FastAPI service and the Agent Worker load from the same `.env` file.
+
+```python
+from app.core.config import settings
+
+settings.LIVEKIT_API_KEY   # → "APIxxxxxxxxxxxx"
+settings.AGENT_NAME        # → "chinmay_agent"
+```

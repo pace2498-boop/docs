@@ -1,0 +1,117 @@
+---
+title: Web Call
+description: Start a browser-based voice session with the AI agent and receive a LiveKit access token.
+---
+
+# POST /webCall
+
+Create a web-based voice session. This endpoint creates a LiveKit room, dispatches the agent, and returns a **JWT access token** that a browser client can use to join the room via the LiveKit SDK.
+
+---
+
+## Request
+
+```http
+POST /webCall
+Content-Type: application/json
+```
+
+### Body Parameters
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `participant_name` | `string` | ✅ | Display name shown in the LiveKit room |
+| `participant_identity` | `string` | ✅ | Unique identity for the participant |
+| `system_prompt` | `string` | — | Agent instructions. Default: `"You are a helpful voice AI assistant."` |
+| `tools` | `ToolDefinition[]` | — | Dynamic tool definitions. Default: `[]` |
+| `voice` | `string` | — | TTS voice ID. Uses provider default if not set. |
+| `language` | `string` | — | ISO-639-1 language code. Default: `"en"` |
+| `model_type` | `"standard"` \| `"realtime"` | — | Pipeline type. Default: `"standard"` |
+| `stt_config` | `STTConfig` | — | STT provider config. Standard pipeline only. |
+| `llm_config` | `LLMConfig` | — | LLM provider config. Standard pipeline only. |
+| `tts_config` | `TTSConfig` | — | TTS provider config. Standard pipeline only. |
+| `realtime_config` | `RealtimeConfig` | — | Required when `model_type="realtime"`. |
+| `vad_config` | `VADConfig` | — | VAD tuning. |
+
+---
+
+## Response
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiJ9...",
+  "room_name": "outboundroomlivekit2a1b2c3d",
+  "agent_name": "chinmay_agent_dispatch_id",
+  "participant_identity": "user-001",
+  "participant_name": "Alice"
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `token` | `string` | LiveKit JWT access token — use this with the LiveKit SDK to join the room |
+| `room_name` | `string` | Room name to connect to |
+| `agent_name` | `string` | Dispatched agent identifier |
+| `participant_identity` | `string` | The identity you provided |
+| `participant_name` | `string` | The display name you provided |
+
+---
+
+## Examples
+
+### Basic Web Call
+
+```bash
+curl -X POST http://localhost:8000/webCall \
+  -H "Content-Type: application/json" \
+  -d '{
+    "participant_name": "Alice",
+    "participant_identity": "user-001",
+    "system_prompt": "You are a helpful AI assistant. Greet the user warmly."
+  }'
+```
+
+### Web Call with Custom Model
+
+```bash
+curl -X POST http://localhost:8000/webCall \
+  -H "Content-Type: application/json" \
+  -d '{
+    "participant_name": "Bob",
+    "participant_identity": "user-bob-session-42",
+    "system_prompt": "You are a language tutor helping Bob practice Spanish.",
+    "language": "es",
+    "llm_config": {
+      "provider": "anthropic",
+      "config": { "model": "claude-3-5-sonnet-20241022" }
+    },
+    "tts_config": {
+      "provider": "elevenlabs",
+      "config": { "voice_id": "Rachel" }
+    }
+  }'
+```
+
+---
+
+## Connecting from the Browser
+
+Use the returned `token` and `room_name` with the [LiveKit JavaScript SDK](https://docs.livekit.io/realtime/client/js/):
+
+```javascript
+import { Room } from 'livekit-client';
+
+const room = new Room();
+await room.connect('wss://yourproject.livekit.cloud', token);
+
+// Enable microphone
+await room.localParticipant.setMicrophoneEnabled(true);
+```
+
+---
+
+## Error Responses
+
+| Status | Description |
+|---|---|
+| `500` | Failed to create room or dispatch agent |

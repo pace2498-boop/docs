@@ -1,0 +1,54 @@
+---
+title: Delete Inbound
+description: Remove an inbound phone configuration from LiveKit.
+---
+
+# DELETE /inbound/{sip_trunk_id}/{dispatch_rule_id}
+
+Delete an inbound configuration. This removes both the **SIP inbound trunk** and the **dispatch rule** from LiveKit. The phone number will no longer be answered by the AI agent.
+
+<Warning>
+**This action cannot be undone.** Once deleted, the phone number will stop being answered by the agent. To re-enable, you must call `POST /inbound/configure` again.
+</Warning>
+
+---
+
+## Request
+
+```http
+DELETE /inbound/{sip_trunk_id}/{dispatch_rule_id}
+```
+
+### Path Parameters
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `sip_trunk_id` | `string` | ✅ | SIP trunk ID from the configure response |
+| `dispatch_rule_id` | `string` | ✅ | Dispatch rule ID from the configure response |
+
+---
+
+## Response
+
+```json
+{
+  "message": "Inbound configuration deleted successfully"
+}
+```
+
+---
+
+## Example
+
+```bash
+curl -X DELETE \
+  "http://localhost:8000/inbound/ST_xxxxxxxxxxxx/DR_yyyyyyyyyyyy"
+```
+
+---
+
+## Error Responses
+
+| Status | Description |
+|---|---|
+| `500` | Failed to delete SIP trunk or dispatch rule |

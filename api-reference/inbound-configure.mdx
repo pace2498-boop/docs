@@ -1,0 +1,133 @@
+---
+title: Configure Inbound
+description: Set up a phone number to be answered automatically by the AI agent.
+---
+
+# POST /inbound/configure
+
+Configure a phone number for inbound calls. This creates a **SIP inbound trunk** and a **dispatch rule** in LiveKit. When someone calls the configured number, LiveKit automatically dispatches the agent with the specified configuration.
+
+<Warning>
+**Save the returned `sip_trunk_id` and `dispatch_rule_id`.** You will need both for future update or delete operations. These IDs are not retrievable later.
+</Warning>
+
+---
+
+## Request
+
+```http
+POST /inbound/configure
+Content-Type: application/json
+```
+
+### Body Parameters
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `phone_number` | `string` | ✅ | Inbound phone number to configure (E.164 format) |
+| `system_prompt` | `string` | ✅ | System prompt / personality for the agent |
+| `tools` | `ToolDefinition[]` | — | Dynamic tool definitions. Default: `[]` |
+| `voice` | `string` | — | TTS voice ID |
+| `language` | `string` | — | ISO-639-1 language code. Default: `"en"` |
+| `model_type` | `"standard"` \| `"realtime"` | — | Pipeline type. Default: `"standard"` |
+| `stt_config` | `STTConfig` | — | STT provider config. Standard pipeline only. |
+| `llm_config` | `LLMConfig` | — | LLM provider config. Standard pipeline only. |
+| `tts_config` | `TTSConfig` | — | TTS provider config. Standard pipeline only. |
+| `realtime_config` | `RealtimeConfig` | — | Required when `model_type="realtime"`. |
+| `vad_config` | `VADConfig` | — | VAD tuning. |
+
+---
+
+## Response
+
+```json
+HTTP/1.1 201 Created
+
+{
+  "phone_number": "+918035450231",
+  "sip_trunk_id": "ST_xxxxxxxxxxxx",
+  "dispatch_rule_id": "DR_yyyyyyyyyyyy",
+  "message": "Inbound number configured successfully"
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `phone_number` | `string` | The configured phone number |
+| `sip_trunk_id` | `string` | **Save this.** ID of the created SIP trunk. |
+| `dispatch_rule_id` | `string` | **Save this.** ID of the created dispatch rule. |
+| `message` | `string` | Status message |
+
+---
+
+## Examples
+
+### Basic Configuration
+
+```bash
+curl -X POST http://localhost:8000/inbound/configure \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number": "+918035450231",
+    "system_prompt": "You are a friendly customer support agent for Acme Corp. Help users with their queries."
+  }'
+```
+
+### With Custom Model and Tools
+
+```bash
+curl -X POST http://localhost:8000/inbound/configure \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number": "+918035450231",
+    "system_prompt": "You are a support agent. You can check order status for callers.",
+    "voice": "a3520a8f-226a-428d-9fcd-b0a4711a6829",
+    "language": "en",
+    "llm_config": {
+      "provider": "openai",
+      "config": { "model": "gpt-4o" }
+    },
+    "tools": [
+      {
+        "name": "check_order",
+        "description": "Check order status by order ID",
+        "method": "GET",
+        "url": "https://api.example.com/orders",
+        "headers": { "Authorization": "Bearer sk-..." },
+        "parameters": [
+          {
+            "name": "order_id",
+            "type": "string",
+            "description": "The order ID",
+            "location": "query",
+            "required": true
+          }
+        ]
+      }
+    ]
+  }'
+```
+
+### Hindi Language Agent
+
+```bash
+curl -X POST http://localhost:8000/inbound/configure \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number": "+918035450232",
+    "system_prompt": "Aap ek helpful AI assistant hain. Hindi mein jawaab dein.",
+    "language": "hi",
+    "tts_config": {
+      "provider": "google",
+      "config": { "language_code": "hi-IN" }
+    }
+  }'
+```
+
+---
+
+## Error Responses
+
+| Status | Description |
+|---|---|
+| `500` | Failed to create SIP trunk or dispatch rule |

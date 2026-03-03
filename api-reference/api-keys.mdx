@@ -1,0 +1,172 @@
+---
+title: API Keys
+description: Create and manage API keys for authenticating requests to the LiveKit Voice Agent API.
+---
+
+# API Key Management
+
+All API endpoints require authentication via an `X-API-Key` header. Keys are managed through the admin endpoints protected by a separate `X-Admin-Key`.
+
+<Note>
+Admin endpoints are not visible in the Swagger UI. Use `curl` or Postman to manage API keys.
+</Note>
+
+---
+
+## Authentication Overview
+
+| Header | Used for | Value source |
+|---|---|---|
+| `X-API-Key` | All regular API endpoints | Created via `POST /admin/api-keys` |
+| `X-Admin-Key` | Admin key management only | `ADMIN_KEY` in `.env` |
+
+---
+
+## POST /admin/api-keys
+
+Create a new API key for a user or integration.
+
+```http
+POST /admin/api-keys
+X-Admin-Key: <your-admin-key>
+Content-Type: application/json
+```
+
+### Body Parameters
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `name` | `string` | ✅ | Human-readable label for this key (e.g. `"client-A"`, `"prod-dashboard"`) |
+
+### Response
+
+```json
+HTTP/1.1 201 Created
+
+{
+  "id": 1,
+  "name": "client-A",
+  "api_key": "rock8_a3f9b2c1d4e5f6...",
+  "key_prefix": "rock8_a3f9b2",
+  "created_at": "2026-03-03T08:00:00Z"
+}
+```
+
+<Warning>
+**The `api_key` value is shown only once.** Store it securely immediately. It cannot be retrieved again — if lost, revoke and create a new key.
+</Warning>
+
+### Example
+
+```bash
+curl -X POST https://your-api.example.com/admin/api-keys \
+  -H "X-Admin-Key: your-admin-key" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "client-A"}'
+```
+
+---
+
+## GET /admin/api-keys
+
+List all API keys. Raw keys and hashes are never exposed.
+
+```http
+GET /admin/api-keys
+X-Admin-Key: <your-admin-key>
+```
+
+### Response
+
+```json
+[
+  {
+    "id": 1,
+    "name": "client-A",
+    "key_prefix": "rock8_a3f9b2",
+    "is_active": true,
+    "created_at": "2026-03-03T08:00:00Z",
+    "last_used_at": "2026-03-03T12:34:56Z"
+  },
+  {
+    "id": 2,
+    "name": "staging-bot",
+    "key_prefix": "rock8_7d2k1m",
+    "is_active": false,
+    "created_at": "2026-03-01T10:00:00Z",
+    "last_used_at": null
+  }
+]
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | `integer` | Unique key ID — use this to revoke |
+| `name` | `string` | Label you assigned when creating |
+| `key_prefix` | `string` | First 12 characters for visual identification |
+| `is_active` | `boolean` | `false` = revoked, requests will be rejected |
+| `created_at` | `string` | ISO 8601 creation timestamp |
+| `last_used_at` | `string` \| `null` | ISO 8601 timestamp of last successful request |
+
+### Example
+
+```bash
+curl https://your-api.example.com/admin/api-keys \
+  -H "X-Admin-Key: your-admin-key"
+```
+
+---
+
+## DELETE /admin/api-keys/{id}
+
+Revoke an API key by its ID. Sets `is_active = false` — subsequent requests with this key will receive `401 Unauthorized`.
+
+```http
+DELETE /admin/api-keys/{id}
+X-Admin-Key: <your-admin-key>
+```
+
+### Path Parameters
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `integer` | ✅ | Key ID from the list response |
+
+### Response
+
+```json
+{
+  "message": "API key id=1 has been revoked"
+}
+```
+
+### Example
+
+```bash
+curl -X DELETE https://your-api.example.com/admin/api-keys/1 \
+  -H "X-Admin-Key: your-admin-key"
+```
+
+---
+
+## Error Responses
+
+| Status | Description |
+|---|---|
+| `401` | Missing or invalid `X-Admin-Key` |
+| `404` | Key ID not found |
+
+---
+
+## Using Your API Key
+
+Once you have a key, include it in every request:
+
+```bash
+curl -X POST https://your-api.example.com/call \
+  -H "X-API-Key: rock8_a3f9b2c1d4e5f6..." \
+  -H "Content-Type: application/json" \
+  -d '{...}'
+```
+
+**Swagger UI**: Click the 🔒 **Authorize** button at the top of `/docs`, enter your key in the `X-API-Key` field, and all requests will include it automatically.

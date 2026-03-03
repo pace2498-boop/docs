@@ -1,0 +1,82 @@
+---
+title: Update Inbound
+description: Update an existing inbound configuration — change the prompt, model, tools, or phone number.
+---
+
+# PUT /inbound/update
+
+Update an existing inbound configuration. You must provide the `sip_trunk_id` and `dispatch_rule_id` returned from the initial configuration. Only the fields you provide will be updated — all others remain unchanged.
+
+<Note>
+Updating the dispatch rule creates a **new `dispatch_rule_id`**. Always use the new ID returned in the response for subsequent operations.
+</Note>
+
+---
+
+## Request
+
+```http
+PUT /inbound/update
+Content-Type: application/json
+```
+
+### Body Parameters
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `sip_trunk_id` | `string` | ✅ | SIP trunk ID from the `configure` response |
+| `dispatch_rule_id` | `string` | ✅ | Dispatch rule ID from the `configure` response |
+| `phone_number` | `string` | — | New phone number (updates the SIP trunk) |
+| `system_prompt` | `string` | — | New system prompt |
+| `tools` | `ToolDefinition[]` | — | New tools list (replaces existing) |
+| `voice` | `string` | — | New voice ID |
+| `language` | `string` | — | New language code |
+| `model_type` | `"standard"` \| `"realtime"` | — | New pipeline type |
+| `stt_config` | `STTConfig` | — | New STT config |
+| `llm_config` | `LLMConfig` | — | New LLM config |
+| `tts_config` | `TTSConfig` | — | New TTS config |
+| `realtime_config` | `RealtimeConfig` | — | New realtime config |
+| `vad_config` | `VADConfig` | — | New VAD config |
+
+---
+
+## Response
+
+```json
+{
+  "sip_trunk_id": "ST_xxxxxxxxxxxx",
+  "dispatch_rule_id": "DR_zzzzzzzzzzzz",
+  "message": "Inbound configuration updated successfully"
+}
+```
+
+<Warning>
+The `dispatch_rule_id` in the response may be different from the one you sent. **Update your stored ID** to the new value.
+</Warning>
+
+---
+
+## Example
+
+```bash
+curl -X PUT http://localhost:8000/inbound/update \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sip_trunk_id": "ST_xxxxxxxxxxxx",
+    "dispatch_rule_id": "DR_yyyyyyyyyyyy",
+    "system_prompt": "You are now a premium VIP support agent. Be extra helpful.",
+    "llm_config": {
+      "provider": "openai",
+      "config": { "model": "gpt-4o" }
+    }
+  }'
+```
+
+---
+
+## Error Responses
+
+| Status | Description |
+|---|---|
+| `404` | SIP trunk or dispatch rule not found |
+| `500` | Failed to update configuration |

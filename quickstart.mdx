@@ -1,0 +1,156 @@
+---
+title: Quickstart
+description: Get the LiveKit Voice Agent running locally in under 5 minutes.
+---
+
+# Quickstart
+
+This guide gets both services running locally and makes your first outbound call.
+
+## Prerequisites
+
+- Python 3.11+
+- A [LiveKit](https://livekit.io) account (Cloud or self-hosted)
+- A SIP trunk configured in LiveKit (Twilio, Plivo, Telnyx, etc.)
+- API keys for at least one STT, LLM, and TTS provider (defaults: AssemblyAI + OpenAI + Cartesia)
+- Node.js 18+ (for running `npx mintlify dev`)
+
+---
+
+## Step 1 — Clone and Install
+
+```bash
+git clone <your-repo-url>
+cd livekit-voice-agent
+
+# Create virtual environment
+python -m venv .venv
+
+# Windows
+.venv\Scripts\activate
+
+# macOS / Linux
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+---
+
+## Step 2 — Configure Environment
+
+Copy the example and fill in your credentials:
+
+```bash
+cp .env.example .env   # or create .env manually
+```
+
+Open `.env` and set the required values:
+
+```bash
+# LiveKit
+LIVEKIT_URL=wss://your-livekit-host.livekit.cloud
+LIVEKIT_API_KEY=APIxxxxxxxxxxxxx
+LIVEKIT_API_SECRET=your_api_secret
+
+# Agent name — must match exactly between API and Worker
+AGENT_NAME=my_agent
+
+# Default SIP trunk
+LIVEKIT_SIP_TRUNK_ID=ST_xxxxxxxxxxxx
+
+# AI Providers
+OPENAI_API_KEY=sk-...
+ASSEMBLYAI_API_KEY=...
+CARTESIA_API_KEY=...
+```
+
+See the full [Configuration Reference](/configuration) for all variables.
+
+---
+
+## Step 3 — Start the FastAPI Server
+
+Open a terminal and run:
+
+```bash
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+The API is now available at `http://localhost:8000`. Swagger UI is at `http://localhost:8000/docs`.
+
+---
+
+## Step 4 — Start the Agent Worker
+
+Open a **second** terminal and run:
+
+```bash
+python -m agent.main start
+```
+
+You should see:
+
+```
+🤖 [Agent Worker] Registered agent_name = 'my_agent'
+   ➜ FastAPI MUST dispatch with the same name. If calls are missing, check this first.
+```
+
+<Warning>
+The `AGENT_NAME` in your `.env` must be identical in both the FastAPI service and the Agent Worker. A mismatch causes calls to be silently dropped.
+</Warning>
+
+---
+
+## Step 5 — Make Your First Call
+
+```bash
+curl -X POST http://localhost:8000/call \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_numbers": ["+919876543210"],
+    "from_number": "+918035450231",
+    "sip_trunk_id": "ST_xxxxxxxxxxxx",
+    "system_prompt": "You are a friendly AI assistant. Greet the user and ask how you can help."
+  }'
+```
+
+**Expected response:**
+
+```json
+{
+  "total": 1,
+  "successful": 1,
+  "failed": 0,
+  "results": [
+    {
+      "phone_number": "+919876543210",
+      "success": true,
+      "message": "Call initiated successfully to +919876543210",
+      "room_name": "outboundroomlivekit2a1b2c3d",
+      "participant_id": "sip-caller-3210",
+      "sip_call_id": "e3f4..."
+    }
+  ]
+}
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Outbound Call API" icon="phone-outgoing" href="/api-reference/outbound-call">
+    Full outbound call reference with all options
+  </Card>
+  <Card title="Inbound Calls" icon="phone-incoming" href="/api-reference/inbound-configure">
+    Set up phone numbers to answer automatically
+  </Card>
+  <Card title="Dynamic Tools" icon="wrench" href="/concepts/tools">
+    Give the agent access to external APIs
+  </Card>
+  <Card title="Model Providers" icon="microchip" href="/providers/llm">
+    Swap LLM, STT, and TTS providers
+  </Card>
+</CardGroup>
