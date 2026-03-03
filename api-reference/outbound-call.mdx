@@ -1,0 +1,178 @@
+---
+title: Outbound Call
+description: Initiate AI-powered outbound phone calls to one or more numbers.
+---
+
+# POST /call
+
+Initiate outbound phone calls. Each number gets its own LiveKit room and agent instance. Calls are made **sequentially** with a 3-second gap between each to avoid SIP trunk overload.
+
+---
+
+## Request
+
+```http
+POST /call
+Content-Type: application/json
+```
+
+### Body Parameters
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `phone_numbers` | `string[]` | ✅ | List of E.164 phone numbers to call, e.g. `["+919876543210"]` |
+| `from_number` | `string` | ✅ | Caller ID / From number, e.g. `"+918035450231"` |
+| `sip_trunk_id` | `string` | ✅ | LiveKit SIP Trunk ID, e.g. `"ST_xxxxxxxxxxxx"` |
+| `system_prompt` | `string` | — | System prompt for the agent. Uses default prompt if not provided. |
+| `tools` | `ToolDefinition[]` | — | Dynamic tool definitions. Default: `[]` |
+| `voice` | `string` | — | TTS voice ID. Uses provider default if not set. |
+| `language` | `string` | — | ISO-639-1 language code. Default: `"en"` |
+| `model_type` | `"standard"` \| `"realtime"` | — | Pipeline type. Default: `"standard"` |
+| `stt_config` | `STTConfig` | — | STT provider config. Standard pipeline only. |
+| `llm_config` | `LLMConfig` | — | LLM provider config. Standard pipeline only. |
+| `tts_config` | `TTSConfig` | — | TTS provider config. Standard pipeline only. |
+| `realtime_config` | `RealtimeConfig` | — | Required when `model_type="realtime"`. |
+| `vad_config` | `VADConfig` | — | Voice activity detection tuning. |
+
+---
+
+## Response
+
+```json
+{
+  "total": 2,
+  "successful": 2,
+  "failed": 0,
+  "results": [
+    {
+      "phone_number": "+919876543210",
+      "success": true,
+      "message": "Call initiated successfully to +919876543210",
+      "room_name": "outboundroomlivekit2a1b2c3d",
+      "participant_id": "sip-caller-3210",
+      "sip_call_id": "e3f4a1b2..."
+    }
+  ]
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `total` | `integer` | Total number of calls attempted |
+| `successful` | `integer` | Number of calls successfully initiated |
+| `failed` | `integer` | Number of calls that failed |
+| `results` | `array` | Per-call results (see below) |
+| `results[].phone_number` | `string` | The number that was called |
+| `results[].success` | `boolean` | Whether this call succeeded |
+| `results[].message` | `string` | Human-readable status message |
+| `results[].room_name` | `string` | LiveKit room name (null on failure) |
+| `results[].participant_id` | `string` | SIP participant identity (null on failure) |
+| `results[].sip_call_id` | `string` | SIP call ID (null on failure) |
+| `results[].error` | `string` | Error message (null on success) |
+
+---
+
+## Examples
+
+### Basic Call
+
+```bash
+curl -X POST http://localhost:8000/call \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_numbers": ["+919876543210"],
+    "from_number": "+918035450231",
+    "sip_trunk_id": "ST_xxxxxxxxxxxx",
+    "system_prompt": "You are a friendly sales agent for Acme Corp. Ask the user if they are interested in our new product."
+  }'
+```
+
+### With Custom LLM (GPT-4o) and Voice
+
+```bash
+curl -X POST http://localhost:8000/call \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_numbers": ["+919876543210"],
+    "from_number": "+918035450231",
+    "sip_trunk_id": "ST_xxxxxxxxxxxx",
+    "system_prompt": "You are a premium customer support agent.",
+    "voice": "a3520a8f-226a-428d-9fcd-b0a4711a6829",
+    "language": "en",
+    "llm_config": {
+      "provider": "openai",
+      "config": { "model": "gpt-4o" }
+    }
+  }'
+```
+
+### Realtime Pipeline (Ultravox)
+
+```bash
+curl -X POST http://localhost:8000/call \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_numbers": ["+919876543210"],
+    "from_number": "+918035450231",
+    "sip_trunk_id": "ST_xxxxxxxxxxxx",
+    "model_type": "realtime",
+    "realtime_config": {
+      "provider": "ultravox",
+      "config": {
+        "model": "fixie-ai/ultravox",
+        "system_prompt": "You are a helpful assistant."
+      }
+    }
+  }'
+```
+
+### Multiple Numbers with Tools
+
+```bash
+curl -X POST http://localhost:8000/call \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_numbers": ["+919876543210", "+919876543211"],
+    "from_number": "+918035450231",
+    "sip_trunk_id": "ST_xxxxxxxxxxxx",
+    "system_prompt": "You are an appointment booking agent.",
+    "tools": [
+      {
+        "name": "book_appointment",
+        "description": "Book an appointment for the caller",
+        "method": "POST",
+        "url": "https://api.example.com/appointments",
+        "headers": { "Authorization": "Bearer sk-..." },
+        "parameters": [
+          {
+            "name": "phone",
+            "type": "string",
+            "description": "Caller phone number",
+            "location": "body",
+            "required": true
+          },
+          {
+            "name": "date",
+            "type": "string",
+            "description": "Appointment date in YYYY-MM-DD format",
+            "location": "body",
+            "required": true
+          }
+        ]
+      }
+    ]
+  }'
+```
+
+---
+
+## Error Responses
+
+| Status | Description |
+|---|---|
+| `400` | Missing required fields (`sip_trunk_id`, `phone_numbers`) |
+| `500` | LiveKit service not initialized or internal error |

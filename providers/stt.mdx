@@ -1,0 +1,187 @@
+---
+title: STT Providers
+description: Supported Speech-to-Text (STT) providers and their configuration options.
+---
+
+# STT Providers
+
+The standard pipeline supports multiple Speech-to-Text providers. Set `stt_config.provider` to any of the values below.
+
+---
+
+## Default (AssemblyAI)
+
+When no `stt_config` is provided, AssemblyAI is used with the `universal-streaming-multilingual` model, which supports over 99 languages automatically.
+
+---
+
+## Supported Providers
+
+### AssemblyAI
+
+| Field | Value |
+|---|---|
+| `provider` | `"assemblyai"` |
+| Required Key | `ASSEMBLYAI_API_KEY` |
+
+```json
+{
+  "stt_config": {
+    "provider": "assemblyai",
+    "config": {
+      "model": "universal-streaming-multilingual",
+      "end_of_turn_confidence_threshold": 0.6
+    }
+  }
+}
+```
+
+---
+
+### Deepgram
+
+| Field | Value |
+|---|---|
+| `provider` | `"deepgram"` |
+| Required Key | `DEEPGRAM_API_KEY` |
+
+```json
+{
+  "stt_config": {
+    "provider": "deepgram",
+    "config": {
+      "model": "nova-2-phonecall",
+      "language": "en"
+    }
+  }
+}
+```
+
+---
+
+### OpenAI Whisper
+
+| Field | Value |
+|---|---|
+| `provider` | `"openai"` |
+| Required Key | `OPENAI_API_KEY` |
+
+```json
+{
+  "stt_config": {
+    "provider": "openai",
+    "config": {
+      "model": "whisper-1"
+    }
+  }
+}
+```
+
+---
+
+### ElevenLabs
+
+| Field | Value |
+|---|---|
+| `provider` | `"elevenlabs"` |
+| Required Key | `ELEVENLABS_API_KEY` |
+
+```json
+{
+  "stt_config": {
+    "provider": "elevenlabs",
+    "config": {}
+  }
+}
+```
+
+---
+
+### Cartesia
+
+| Field | Value |
+|---|---|
+| `provider` | `"cartesia"` |
+| Required Key | `CARTESIA_API_KEY` |
+
+```json
+{
+  "stt_config": {
+    "provider": "cartesia",
+    "config": {}
+  }
+}
+```
+
+---
+
+### Google
+
+| Field | Value |
+|---|---|
+| `provider` | `"google"` |
+| Required Key | `GOOGLE_APPLICATION_CREDENTIALS` or `GOOGLE_API_KEY` |
+
+```json
+{
+  "stt_config": {
+    "provider": "google",
+    "config": {
+      "languages": ["en-US"]
+    }
+  }
+}
+```
+
+---
+
+### Groq
+
+| Field | Value |
+|---|---|
+| `provider` | `"groq"` |
+| Required Key | `GROQ_API_KEY` |
+| Note | Must install `livekit-plugins-groq` |
+
+```json
+{
+  "stt_config": {
+    "provider": "groq",
+    "config": {
+      "model": "whisper-large-v3"
+    }
+  }
+}
+```
+
+---
+
+### Azure
+
+| Field | Value |
+|---|---|
+| `provider` | `"azure"` |
+| Required Key | Azure credentials in env |
+| Note | Must install `livekit-plugins-azure` |
+
+```json
+{
+  "stt_config": {
+    "provider": "azure",
+    "config": {}
+  }
+}
+```
+
+---
+
+## Provider Comparison
+
+| Provider | Real-time Streaming | Multi-language | Latency | Best For |
+|---|---|---|---|---|
+| AssemblyAI | ✅ | ✅ 99+ langs | Low | General use, multilingual |
+| Deepgram | ✅ | ✅ | Very Low | Phone calls, speed |
+| OpenAI | ✅ | ✅ | Medium | OpenAI-first stacks |
+| ElevenLabs | ✅ | Limited | Medium | ElevenLabs TTS parity |
+| Google | ✅ | ✅ | Low | Google ecosystem |
+| Groq | ✅ | ✅ | Very Low | Speed-critical workloads |

@@ -1,0 +1,87 @@
+{
+    "$schema": "https://mintlify.com/schema.json",
+    "name": "LiveKit Voice Agent",
+    "logo": {
+        "dark": "/logo/dark.svg",
+        "light": "/logo/light.svg"
+    },
+    "favicon": "/favicon.svg",
+    "colors": {
+        "primary": "#0D9373",
+        "light": "#07C983",
+        "dark": "#0D9373",
+        "anchors": {
+            "from": "#0D9373",
+            "to": "#07C983"
+        }
+    },
+    "topbarLinks": [
+        {
+            "name": "LiveKit Docs",
+            "url": "https://docs.livekit.io"
+        }
+    ],
+    "topbarCtaButton": {
+        "name": "GitHub",
+        "url": "https://github.com"
+    },
+    "tabs": [
+        {
+            "name": "API Reference",
+            "url": "api-reference"
+        },
+        {
+            "name": "Providers",
+            "url": "providers"
+        }
+    ],
+    "anchors": [
+        {
+            "name": "LiveKit",
+            "icon": "link",
+            "url": "https://livekit.io"
+        }
+    ],
+    "navigation": [
+        {
+            "group": "Getting Started",
+            "pages": [
+                "introduction",
+                "authentication",
+                "quickstart",
+                "installation",
+                "configuration"
+            ]
+        },
+        {
+            "group": "Concepts",
+            "pages": [
+                "concepts/architecture",
+                "concepts/pipelines",
+                "concepts/tools"
+            ]
+        },
+        {
+            "group": "API Reference",
+            "pages": [
+                "api-reference/outbound-call",
+                "api-reference/webcall",
+                "api-reference/inbound-configure",
+                "api-reference/inbound-update",
+                "api-reference/inbound-delete"
+            ]
+        },
+        {
+            "group": "Providers",
+            "pages": [
+                "providers/stt",
+                "providers/llm",
+                "providers/tts",
+                "providers/realtime"
+            ]
+        }
+    ],
+    "footerSocials": {
+        "github": "https://github.com"
+    }
+}

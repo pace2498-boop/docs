@@ -1,0 +1,164 @@
+---
+title: Dynamic Tools
+description: Give your AI agent access to any external HTTP API at runtime using the dynamic tools system.
+---
+
+# Dynamic Tools
+
+The dynamic tools system allows you to connect the AI agent to any external HTTP API — without writing any code. Tools are defined as JSON in the API request and executed automatically by the agent during conversations.
+
+---
+
+## How It Works
+
+1. You define tools as JSON in your call request (`tools` array).
+2. The agent receives these definitions via room metadata.
+3. When the agent decides to call a tool (based on the conversation), it executes an HTTP request to the configured URL.
+4. The response is returned to the LLM as context for the next reply.
+
+---
+
+## Tool Definition Schema
+
+Each tool is an object with the following fields:
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `name` | `string` | ✅ | Unique tool name. Must start with a letter and contain only `[a-zA-Z0-9_]`. |
+| `description` | `string` | ✅ | Tells the LLM **when** to use this tool. Be specific. |
+| `method` | `string` | ✅ | HTTP method: `GET`, `POST`, `PUT`, `PATCH`, or `DELETE` |
+| `url` | `string` | ✅ | Full URL endpoint to call (must start with `http://` or `https://`) |
+| `headers` | `object` | — | Static HTTP headers (e.g., authorization). |
+| `parameters` | `array` | — | List of `ToolParameter` objects (see below) |
+
+### ToolParameter Schema
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `name` | `string` | ✅ | Parameter name |
+| `type` | `string` | ✅ | One of: `string`, `number`, `integer`, `boolean`, `array`, `object` |
+| `description` | `string` | ✅ | Tells the LLM what this parameter means |
+| `location` | `string` | ✅ | Where to send it: `query`, `body`, or `header` |
+| `required` | `boolean` | — | Default: `false` |
+
+---
+
+## Example: Weather Tool (GET)
+
+```json
+{
+  "name": "get_weather",
+  "description": "Get current weather for a city. Use this when the user asks about the weather.",
+  "method": "GET",
+  "url": "https://api.weather.example.com/current",
+  "parameters": [
+    {
+      "name": "city",
+      "type": "string",
+      "description": "The city name to get weather for",
+      "location": "query",
+      "required": true
+    },
+    {
+      "name": "units",
+      "type": "string",
+      "description": "Temperature units: 'celsius' or 'fahrenheit'",
+      "location": "query",
+      "required": false
+    }
+  ]
+}
+```
+
+---
+
+## Example: Create Order Tool (POST with Auth)
+
+```json
+{
+  "name": "create_order",
+  "description": "Create a new order for the user. Call this when they confirm they want to place an order.",
+  "method": "POST",
+  "url": "https://api.shop.example.com/orders",
+  "headers": {
+    "Authorization": "Bearer your_api_token",
+    "X-Store-ID": "store_123"
+  },
+  "parameters": [
+    {
+      "name": "product_id",
+      "type": "string",
+      "description": "The ID of the product to order",
+      "location": "body",
+      "required": true
+    },
+    {
+      "name": "quantity",
+      "type": "integer",
+      "description": "Number of units to order",
+      "location": "body",
+      "required": true
+    },
+    {
+      "name": "customer_phone",
+      "type": "string",
+      "description": "Customer's phone number for delivery confirmation",
+      "location": "body",
+      "required": false
+    }
+  ]
+}
+```
+
+---
+
+## Parameter Locations
+
+| Location | Where it goes | Use case |
+|---|---|---|
+| `query` | URL query string `?key=value` | Filters, search params, GET requests |
+| `body` | JSON request body | POST/PUT/PATCH data |
+| `header` | HTTP request header | Dynamic auth tokens, user-specific headers |
+
+<Note>
+Static headers (like a fixed API key) should use the `headers` object in the tool definition rather than a `header` parameter. Use `header` parameter location only when the value must be **dynamically provided** by the LLM.
+</Note>
+
+---
+
+## Reserved Tool Names
+
+The name `hangup` is reserved and cannot be used. The agent has a built-in hangup capability.
+
+---
+
+## Using Tools in a Call Request
+
+Pass tools in the `tools` array of any call request:
+
+```json
+{
+  "phone_numbers": ["+919876543210"],
+  "from_number": "+918035450231",
+  "sip_trunk_id": "ST_xxxxxxxxxxxx",
+  "system_prompt": "You are a customer support agent for ShopEasy. You can check order status and create new orders.",
+  "tools": [
+    {
+      "name": "check_order_status",
+      "description": "Check the status of an existing order by order ID",
+      "method": "GET",
+      "url": "https://api.shopeasy.com/orders",
+      "headers": { "Authorization": "Bearer sk-..." },
+      "parameters": [
+        {
+          "name": "order_id",
+          "type": "string",
+          "description": "The order ID to look up",
+          "location": "query",
+          "required": true
+        }
+      ]
+    }
+  ]
+}
+```

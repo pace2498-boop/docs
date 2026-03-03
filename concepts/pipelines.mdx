@@ -1,0 +1,140 @@
+---
+title: Model Pipelines
+description: Understand the Standard (STT + LLM + TTS) and Realtime pipelines, and when to use each.
+---
+
+# Model Pipelines
+
+The agent supports two distinct pipeline architectures. You choose one per call by setting `model_type`.
+
+---
+
+## Standard Pipeline
+
+```
+Audio In → STT → LLM → TTS → Audio Out
+```
+
+The **standard pipeline** uses three separate AI components:
+
+| Component | Role | Default |
+|---|---|---|
+| **STT** (Speech-to-Text) | Transcribes user speech to text | AssemblyAI |
+| **LLM** (Language Model) | Generates the agent's response | OpenAI gpt-4o-mini |
+| **TTS** (Text-to-Speech) | Converts agent response to speech | Cartesia sonic-3 |
+
+Each component is independently configurable per call. Use `model_type: "standard"` (the default).
+
+### Configuration Example
+
+```json
+{
+  "model_type": "standard",
+  "stt_config": {
+    "provider": "assemblyai",
+    "config": {}
+  },
+  "llm_config": {
+    "provider": "openai",
+    "config": { "model": "gpt-4o" }
+  },
+  "tts_config": {
+    "provider": "cartesia",
+    "config": {
+      "voice": "95d51f79-c397-46f9-b49a-23763d3eaa2d",
+      "language": "en"
+    }
+  }
+}
+```
+
+### When to Use Standard
+- You need maximum control over each component
+- You want to mix providers (e.g., Deepgram STT + Anthropic LLM + ElevenLabs TTS)
+- You need broad language support across multiple providers
+- Latency is not ultra-critical (standard has ~500ms–2s pipeline delay)
+
+---
+
+## Realtime Pipeline
+
+```
+Audio In ──→ Realtime Model ──→ Audio Out
+             (STT + LLM + TTS
+              in one model)
+```
+
+The **realtime pipeline** uses a single multimodal model that handles speech-in to speech-out natively. This eliminates the STT→LLM→TTS handoff latency.
+
+Use `model_type: "realtime"` and provide `realtime_config`.
+
+### Configuration Example
+
+```json
+{
+  "model_type": "realtime",
+  "realtime_config": {
+    "provider": "openai_realtime",
+    "config": {
+      "model": "gpt-4o-realtime-preview",
+      "voice": "alloy",
+      "system_prompt": "You are a helpful assistant."
+    }
+  }
+}
+```
+
+### Supported Realtime Providers
+
+| Provider | `provider` value | Notes |
+|---|---|---|
+| OpenAI Realtime | `openai_realtime` | GPT-4o realtime preview |
+| Gemini Live | `gemini_live` or `gemini-live` | Google's native audio model; uses `instructions` key for system prompt |
+| Ultravox | `ultravox` | Fixie.ai's realtime voice model |
+
+<Note>
+For Gemini Live, the system prompt key is `instructions` (not `system_prompt`) inside the `config` object. The agent handles this automatically.
+</Note>
+
+### When to Use Realtime
+- You need ultra-low latency (sub-300ms response)
+- You're using OpenAI, Google, or Ultravox
+- Your use case is conversational (not highly tool-heavy)
+
+---
+
+## VAD (Voice Activity Detection)
+
+Both pipelines include **Silero VAD** for detecting when the user starts and stops speaking. Custom tuning is available via `vad_config`:
+
+```json
+{
+  "vad_config": {
+    "min_silence_duration": 0.3,
+    "activation_threshold": 0.5,
+    "min_speech_duration": 0.3
+  }
+}
+```
+
+| Parameter | Default | Range | Description |
+|---|---|---|---|
+| `min_silence_duration` | `0.1` | 0.05–1.0 | Seconds of silence before end-of-speech is signaled |
+| `activation_threshold` | `0.4` | 0.0–1.0 | Sensitivity. Lower = more sensitive to quiet voices |
+| `min_speech_duration` | `0.4` | 0.1–1.0 | Minimum speech length to trigger processing |
+
+<Tip>
+Increase `min_silence_duration` (e.g., `0.5`) if users are being cut off mid-sentence. Decrease it (e.g., `0.1`) for faster agent response to short utterances.
+</Tip>
+
+---
+
+## Choosing a Pipeline
+
+| Scenario | Recommendation |
+|---|---|
+| General purpose calls | Standard (OpenAI gpt-4o-mini + AssemblyAI + Cartesia) |
+| Low-latency conversational | Realtime (OpenAI Realtime or Gemini Live) |
+| Non-English languages | Standard with Deepgram or Google STT |
+| Custom tool-heavy agent | Standard (more compatible with function calling) |
+| Cost-sensitive | Standard with smaller models |

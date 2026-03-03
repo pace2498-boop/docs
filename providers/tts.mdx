@@ -1,0 +1,179 @@
+---
+title: TTS Providers
+description: Supported Text-to-Speech (TTS) providers, voice IDs, and configuration options.
+---
+
+# TTS Providers
+
+The standard pipeline uses a Text-to-Speech provider to synthesize the agent's voice. Set `tts_config.provider` to any of the values below.
+
+---
+
+## Default (Cartesia sonic-3)
+
+When no `tts_config` is provided, Cartesia `sonic-3` is used with voice ID `95d51f79-c397-46f9-b49a-23763d3eaa2d`.
+
+You can override just the voice and language using the top-level `voice` and `language` fields:
+
+```json
+{
+  "voice": "a3520a8f-226a-428d-9fcd-b0a4711a6829",
+  "language": "en"
+}
+```
+
+---
+
+## Supported Providers
+
+### Cartesia *(Default)*
+
+| Field | Value |
+|---|---|
+| `provider` | `"cartesia"` |
+| Required Key | `CARTESIA_API_KEY` |
+
+```json
+{
+  "tts_config": {
+    "provider": "cartesia",
+    "config": {
+      "model": "sonic-3",
+      "voice": "95d51f79-c397-46f9-b49a-23763d3eaa2d",
+      "language": "en"
+    }
+  }
+}
+```
+
+**Popular voice IDs**:
+
+| Voice ID | Description |
+|---|---|
+| `95d51f79-c397-46f9-b49a-23763d3eaa2d` | Default female voice |
+| `7c6219d2-e8d2-462c-89d8-7ecba7c75d65` | Friendly female |
+| `6baae46d-1226-45b5-a976-c7f9b797aae2` | Professional male |
+| `a3520a8f-226a-428d-9fcd-b0a4711a6829` | Warm female |
+
+Find more voices at [Cartesia Voice Library](https://play.cartesia.ai/).
+
+---
+
+### ElevenLabs
+
+| Field | Value |
+|---|---|
+| `provider` | `"elevenlabs"` |
+| Required Key | `ELEVENLABS_API_KEY` |
+
+```json
+{
+  "tts_config": {
+    "provider": "elevenlabs",
+    "config": {
+      "voice_id": "EXAVITQu4vr4xnSDxMaL",
+      "model": "eleven_turbo_v2_5"
+    }
+  }
+}
+```
+
+**Popular models**: `eleven_turbo_v2_5` (fast), `eleven_multilingual_v2` (multi-language)
+
+---
+
+### OpenAI
+
+| Field | Value |
+|---|---|
+| `provider` | `"openai"` |
+| Required Key | `OPENAI_API_KEY` |
+
+```json
+{
+  "tts_config": {
+    "provider": "openai",
+    "config": {
+      "voice": "alloy",
+      "model": "tts-1"
+    }
+  }
+}
+```
+
+**Voices**: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`
+
+---
+
+### Deepgram
+
+| Field | Value |
+|---|---|
+| `provider` | `"deepgram"` |
+| Required Key | `DEEPGRAM_API_KEY` |
+
+```json
+{
+  "tts_config": {
+    "provider": "deepgram",
+    "config": {
+      "model": "aura-asteria-en"
+    }
+  }
+}
+```
+
+---
+
+### Google
+
+| Field | Value |
+|---|---|
+| `provider` | `"google"` |
+| Required Key | `GOOGLE_APPLICATION_CREDENTIALS` or `GOOGLE_API_KEY` |
+
+```json
+{
+  "tts_config": {
+    "provider": "google",
+    "config": {
+      "voice_name": "en-US-Neural2-F",
+      "language_code": "en-US"
+    }
+  }
+}
+```
+
+Useful for non-English languages: set `language_code` to `"hi-IN"`, `"ta-IN"`, `"es-ES"`, etc.
+
+---
+
+### Azure
+
+| Field | Value |
+|---|---|
+| `provider` | `"azure"` |
+| Required Key | Azure credentials |
+| Note | Must install `livekit-plugins-azure` |
+
+---
+
+### Groq
+
+| Field | Value |
+|---|---|
+| `provider` | `"groq"` |
+| Required Key | `GROQ_API_KEY` |
+| Note | Must install `livekit-plugins-groq` |
+
+---
+
+## Provider Comparison
+
+| Provider | Voice Quality | Languages | Latency | Best For |
+|---|---|---|---|---|
+| Cartesia | ⭐⭐⭐⭐⭐ | 40+ | Very Low | Default, high quality |
+| ElevenLabs | ⭐⭐⭐⭐⭐ | 29+ | Low | Most realistic voices |
+| OpenAI | ⭐⭐⭐⭐ | En primary | Low | OpenAI-first stacks |
+| Deepgram | ⭐⭐⭐⭐ | En primary | Very Low | Speed-critical |
+| Google | ⭐⭐⭐⭐ | 100+ | Medium | Non-English languages |

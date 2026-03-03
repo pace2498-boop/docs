@@ -1,0 +1,135 @@
+---
+title: Architecture
+description: Deep dive into the two-service architecture, room lifecycle, metadata passing, and call flows.
+---
+
+# Architecture
+
+LiveKit Voice Agent is built on two independent services that communicate entirely through **LiveKit rooms and metadata**.
+
+---
+
+## Two-Service Design
+
+```mermaid
+graph LR
+    Client[Client / CURL] -->|REST API| API[FastAPI Service\nport 8000]
+    API -->|1. Create Room| LK[LiveKit Server]
+    API -->|2. Dispatch Agent| LK
+    API -->|3. Create SIP Participant| LK
+    Worker[Agent Worker\nagent/main.py] -->|Connects| LK
+    LK -->|SIP| Phone[📞 Phone Network]
+    LK -->|WebRTC| Browser[🌐 Browser]
+
+    subgraph Worker Pipeline
+        Worker --> STT[STT]
+        STT --> LLM[LLM]
+        LLM --> TTS[TTS]
+    end
+```
+
+| Service | File | Role |
+|---|---|---|
+| **FastAPI API** | `app/main.py` | Receives REST calls, orchestrates LiveKit API calls |
+| **Agent Worker** | `agent/main.py` | Joins rooms, reads metadata, runs the voice AI pipeline |
+
+These two services **do not communicate directly**. All coordination happens via LiveKit room state.
+
+---
+
+## Outbound Call Flow
+
+When you `POST /call`, the following sequence happens:
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant A as FastAPI
+    participant L as LiveKit
+    participant W as Agent Worker
+    participant P as Phone
+
+    C->>A: POST /call (phone, prompt, tools)
+    A->>L: Create Room (with JSON metadata)
+    A->>L: Poll until room is confirmed live
+    A->>L: Dispatch agent to room
+    W->>L: Agent connects to room
+    W->>W: Reads room metadata → builds pipeline
+    A->>L: Create SIP participant (dials phone)
+    P-->>L: Call answered
+    W->>P: Speaks greeting
+    P->>W: User responds (voice)
+    W->>P: Agent replies (voice pipeline)
+```
+
+**Key ordering rule**: The agent is dispatched and confirmed in the room *before* the phone is dialed. This prevents the agent from being unavailable when the call is answered.
+
+---
+
+## Inbound Call Flow
+
+For inbound calls, configuration is set up once via `POST /inbound/configure`:
+
+```mermaid
+sequenceDiagram
+    participant Admin as Admin (once)
+    participant A as FastAPI
+    participant L as LiveKit
+    participant W as Agent Worker
+    participant P as Phone Caller
+
+    Admin->>A: POST /inbound/configure (phone, prompt, tools)
+    A->>L: Create SIP Inbound Trunk
+    A->>L: Create Dispatch Rule (with JSON metadata)
+
+    Note over L: Configuration saved in LiveKit
+
+    P->>L: Inbound call to configured number
+    L->>W: Auto-dispatch agent (using dispatch rule)
+    W->>L: Agent connects to room
+    W->>W: Reads job metadata → builds pipeline
+    W->>P: Speaks greeting
+```
+
+---
+
+## Metadata as Configuration
+
+The agent worker is stateless — all configuration is passed in the **room or job metadata** as a JSON object:
+
+```json
+{
+  "system_prompt": "You are a helpful sales agent...",
+  "tools": [...],
+  "voice": "95d51f79-c397-46f9-b49a-23763d3eaa2d",
+  "language": "en",
+  "model_type": "standard",
+  "stt_config": { "provider": "assemblyai", "config": {} },
+  "llm_config": { "provider": "openai", "config": { "model": "gpt-4o" } },
+  "tts_config": { "provider": "cartesia", "config": {} }
+}
+```
+
+The agent parses this with `parse_metadata()` in `agent/main.py`. If meta is large, it's automatically compressed using **zlib + base64** (prefixed with `z:`).
+
+---
+
+## Recording and Transcripts
+
+- **Recording**: When a SIP call is answered, a LiveKit Egress recording is started automatically.
+- **Transcripts**: The agent collects conversation text during the session and uploads a transcript to **S3** at session end.
+
+Both happen transparently without any additional API calls from the client.
+
+---
+
+## AGENT_NAME Matching
+
+The `AGENT_NAME` environment variable is the critical link between the FastAPI service and the Agent Worker. When the API dispatches an agent, it uses this name. The Worker only picks up jobs that match its registered name.
+
+```
+FastAPI:  dispatch(agent_name="chinmay_agent")  ──→  LiveKit
+Worker:   @server.rtc_session(agent_name="chinmay_agent")  ←── LiveKit
+```
+
+If these values differ, dispatches are silently dropped and calls never connect.

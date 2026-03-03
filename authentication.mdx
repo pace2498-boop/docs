@@ -1,0 +1,67 @@
+---
+title: Authentication
+description: How to authenticate requests to the LiveKit Voice Agent API.
+---
+
+# Authentication
+
+All API requests must include an **API key** in the request header.
+
+```http
+X-API-Key: your-api-key-here
+```
+
+---
+
+## How to include it
+
+### curl
+
+```bash
+curl -X POST https://your-api.example.com/call \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{...}'
+```
+
+### JavaScript / fetch
+
+```javascript
+fetch('https://your-api.example.com/call', {
+  method: 'POST',
+  headers: {
+    'X-API-Key': 'your-api-key',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({...}),
+});
+```
+
+### Python / requests
+
+```python
+import requests
+
+response = requests.post(
+    'https://your-api.example.com/call',
+    headers={'X-API-Key': 'your-api-key'},
+    json={...},
+)
+```
+
+---
+
+## Swagger UI
+
+Open `/docs`, click the 🔒 **Authorize** button, enter your API key in the **X-API-Key** field. All requests from the UI will include it automatically.
+
+---
+
+## Error response
+
+If the key is missing or invalid:
+
+```json
+HTTP 401 Unauthorized
+{"detail": "Invalid or missing API key"}
+```
